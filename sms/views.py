@@ -8,7 +8,7 @@ from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
-from games.models import BracketCityScore, ConnectionsScore, Game, Score
+from games.models import BracketCityScore, ConnectionsScore, WordleScore, Game, Score
 from games.parsers import PARSERS
 from games.parsers.base import ParseError
 from users.models import TallyUser, normalize_phone
@@ -68,7 +68,7 @@ def sms_webhook(request):
     if matched_parser is None:
         _send_sms(
             user.phone_number,
-            "Couldn't recognize this score. Make sure you're sending the share text directly from Bracket City or NYT Connections.",
+            "Couldn't recognize this score. Make sure you're sending the share text directly from Bracket City, NYT Connections, or Wordle.",
         )
         return HttpResponse(status=200)
 
@@ -131,6 +131,15 @@ def sms_webhook(request):
                     solved=d["solved"],
                     first_solved_category=d["first_solved_category"],
                     correct_categories=d["correct_categories"],
+                )
+            elif parsed.game_slug == "wordle":
+                d = parsed.raw_details
+                WordleScore.objects.create(
+                    score=score,
+                    puzzle_number=d["puzzle_number"],
+                    attempts_grid=d["grid"],
+                    attempts=d["attempts"],
+                    solved=d["solved"],
                 )
     except Exception as exc:
         logger.exception("Error saving score for %s: %s", user, exc)

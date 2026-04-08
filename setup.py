@@ -19,6 +19,8 @@ games = [
      "description": "Daily bracket puzzle from The Atlantic."},
     {"name": "NYT Connections", "slug": "connections", "order": 2,
      "description": "Group the 16 words into four categories."},
+    {"name": "Wordle", "slug": "wordle", "order": 3,
+     "description": "Guess the five-letter word in six tries."},
 ]
 
 for g in games:

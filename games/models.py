@@ -51,6 +51,17 @@ class BracketCityScore(models.Model):
         return f"BC {self.total_score} ({self.difficulty})"
 
 
+class WordleScore(models.Model):
+    score = models.OneToOneField(Score, on_delete=models.CASCADE, related_name="wordle_detail")
+    puzzle_number = models.PositiveIntegerField()
+    attempts_grid = models.JSONField(help_text="List of rows; each row is a list of square states")
+    attempts = models.PositiveSmallIntegerField(default=0)
+    solved = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"Wordle #{self.puzzle_number} ({self.attempts}/6 {'solved' if self.solved else 'unsolved'})"
+
+
 class ConnectionsScore(models.Model):
     score = models.OneToOneField(Score, on_delete=models.CASCADE, related_name="connections_detail")
     puzzle_number = models.PositiveIntegerField()

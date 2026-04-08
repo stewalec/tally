@@ -6,6 +6,7 @@ class Game(models.Model):
     name = models.CharField(max_length=100)
     slug = models.SlugField(unique=True)
     description = models.TextField(blank=True)
+    url = models.URLField("URL", blank=True, help_text="Link to the online playable game")
     is_active = models.BooleanField(default=True)
     order = models.PositiveSmallIntegerField(default=0, help_text="Display order in the UI")
 

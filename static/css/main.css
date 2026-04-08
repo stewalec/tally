@@ -504,16 +504,32 @@ input[type="date"]:focus {
   padding-bottom: 0;
 }
 
-.tab {
-  padding: 8px 16px;
-  font-size: 0.9rem;
-  font-weight: 500;
-  color: var(--text-2);
+.tab-group {
+  display: inline-flex;
+  align-items: center;
   border-radius: var(--radius) var(--radius) 0 0;
   border: 1px solid transparent;
   border-bottom: none;
   position: relative;
   bottom: -1px;
+}
+
+.tab-group.active {
+  background: var(--bg-2);
+  border-color: var(--border);
+  border-bottom-color: var(--bg-2);
+}
+
+.tab-group.active .tab,
+.tab-group.active .tab-ext {
+  color: var(--text);
+}
+
+.tab {
+  padding: 8px 12px 8px 16px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-2);
   transition: color 0.15s;
 }
 
@@ -526,6 +542,18 @@ input[type="date"]:focus {
   background: var(--bg-2);
   border-color: var(--border);
   border-bottom-color: var(--bg-2);
+}
+
+.tab-ext {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 12px 8px 0;
+  color: var(--text-3);
+  transition: color 0.15s;
+}
+
+.tab-ext:hover {
+  color: var(--accent);
 }
 
 /* ── Period selector ─────────────────────────────────────── */

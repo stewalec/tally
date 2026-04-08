@@ -1,0 +1,47 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script>
+    (function(){
+      var p=localStorage.getItem("tally-theme")||"system";
+      var t=p==="system"?(window.matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light"):p;
+      document.documentElement.dataset.theme=t;
+    })();
+  </script>
+  <title>Sign in – Tally</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{% static 'css/main.css' %}" />
+</head>
+<body class="auth-page">
+<button class="theme-toggle theme-toggle-float" aria-label="Toggle theme"></button>
+<div class="auth-card">
+  <div class="auth-logo">Tally</div>
+  <h1 class="auth-title">Sign in</h1>
+  <p class="auth-subtitle">Enter your phone number to receive a one-time code.</p>
+
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-error">{{ message }}</div>
+    {% endfor %}
+  {% endif %}
+
+  <form method="post" class="auth-form">
+    {% csrf_token %}
+    <div class="form-group">
+      <label class="form-label" for="id_phone_number">Phone number</label>
+      {{ form.phone_number }}
+      {% if form.phone_number.errors %}
+        <div class="form-error">{{ form.phone_number.errors.0 }}</div>
+      {% endif %}
+    </div>
+    <button type="submit" class="btn btn-primary btn-full">Send code</button>
+  </form>
+</div>
+<script src="{% static 'js/main.js' %}"></script>
+</body>
+</html>

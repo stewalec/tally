@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+{% block title %}{{ target_user.display_name }} – Tally{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <a href="{% url 'leaderboard' %}{% if current_game %}?game={{ current_game.slug }}{% endif %}" class="back-link">← Leaderboard</a>
+  <h1 class="page-title">{{ target_user.display_name }}</h1>
+</div>
+
+{# ── Game tabs ──────────────────────────────────────────────── #}
+<div class="tabs game-tabs">
+  {% for game in games %}
+    <a href="?game={{ game.slug }}"
+       class="tab {% if game.slug == current_game.slug %}active{% endif %}">
+      {{ game.name }}
+    </a>
+  {% endfor %}
+</div>
+
+{% if current_game %}
+
+{# ── Stats cards ─────────────────────────────────────────────── #}
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-label">Current Streak</div>
+    <div class="stat-value">
+      {% if stats.current_streak > 0 %}
+        🔥 {{ stats.current_streak }}
+      {% else %}
+        0
+      {% endif %}
+    </div>
+    <div class="stat-sub">days</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Longest Streak</div>
+    <div class="stat-value">{{ stats.longest_streak|default:"0" }}</div>
+    <div class="stat-sub">days</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Average Score</div>
+    <div class="stat-value">{{ stats.avg_score|default:"—" }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Best Score</div>
+    <div class="stat-value accent-green">{{ stats.best_score|default:"—" }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Worst Score</div>
+    <div class="stat-value accent-red">{{ stats.worst_score|default:"—" }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Total Games</div>
+    <div class="stat-value">{{ stats.total_games|default:"0" }}</div>
+  </div>
+</div>
+
+{# ── Date filter ─────────────────────────────────────────────── #}
+<div class="card filter-card">
+  <form method="get" class="filter-form">
+    <input type="hidden" name="game" value="{{ current_game.slug }}" />
+    <div class="filter-row">
+      <div class="form-group">
+        <label class="form-label">From</label>
+        <input type="date" name="from" value="{{ date_from }}" class="form-control" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">To</label>
+        <input type="date" name="to" value="{{ date_to }}" class="form-control" />
+      </div>
+      <div class="filter-actions">
+        <button type="submit" class="btn btn-primary btn-sm">Filter</button>
+        <a href="?game={{ current_game.slug }}" class="btn btn-ghost btn-sm">Clear</a>
+      </div>
+    </div>
+  </form>
+</div>
+
+{# ── Score history ────────────────────────────────────────────── #}
+{% if score_history %}
+<div class="card">
+  <table class="history-table">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Score</th>
+        {% if current_game.slug == "bracket-city" %}
+          <th>Difficulty</th>
+          <th>Rank</th>
+          <th>Mistakes</th>
+          <th>Peeks</th>
+        {% elif current_game.slug == "connections" %}
+          <th>Puzzle #</th>
+          <th>Mistakes</th>
+          <th>Solved</th>
+          <th>First Solved</th>
+        {% endif %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for score in score_history %}
+      <tr class="score-row" data-raw-text="{{ score.raw_text }}" data-date="{{ score.puzzle_date|date:'M j, Y' }}" data-score="{{ score.calculated_score }}">
+        <td class="col-date">{{ score.puzzle_date|date:"M j, Y" }}</td>
+        <td class="col-score"><strong>{{ score.calculated_score }}</strong></td>
+        {% if current_game.slug == "bracket-city" %}
+          {% with d=score.bracket_city_detail %}
+            <td>
+              <span class="badge badge-difficulty badge-{{ d.difficulty|lower }}">{{ d.difficulty }}</span>
+            </td>
+            <td>{{ d.rank_emoji }} {{ d.rank }}</td>
+            <td>{{ d.wrong_guesses }}</td>
+            <td>{{ d.peeks }}</td>
+          {% endwith %}
+        {% elif current_game.slug == "connections" %}
+          {% with d=score.connections_detail %}
+            <td>#{{ d.puzzle_number }}</td>
+            <td>{{ d.wrong_guesses }}</td>
+            <td>
+              {% if d.solved %}
+                <span class="badge badge-solved">✓ Yes</span>
+              {% else %}
+                <span class="badge badge-unsolved">✗ No</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if d.first_solved_category %}
+                <span class="badge badge-cat badge-{{ d.first_solved_category|lower }}">
+                  {{ d.first_solved_category }}
+                </span>
+              {% else %}—{% endif %}
+            </td>
+          {% endwith %}
+        {% endif %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="empty-state">
+  <p class="empty-title">No scores found.</p>
+  {% if date_from or date_to %}
+    <p class="empty-sub"><a href="?game={{ current_game.slug }}">Clear the date filter</a> to see all scores.</p>
+  {% endif %}
+</div>
+{% endif %}
+
+{% endif %}{# end if current_game #}
+{% endblock %}
+
+{% block modal %}
+{# ── Score detail modal ─────────────────────────────────────── #}
+<div class="modal-overlay" id="scoreModal">
+  <div class="modal-card">
+    <div class="modal-header">
+      <div>
+        <span class="modal-title" id="modalTitle"></span>
+        <span class="modal-subtitle" id="modalSubtitle"></span>
+      </div>
+      <button class="modal-close" id="modalClose" aria-label="Close">&times;</button>
+    </div>
+    <div class="modal-body">
+      <label class="form-label">Raw submission</label>
+      <pre class="raw-text-block" id="modalRawText"></pre>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  var modal = document.getElementById('scoreModal');
+  if (!modal) return;
+  var title = document.getElementById('modalTitle');
+  var subtitle = document.getElementById('modalSubtitle');
+  var rawText = document.getElementById('modalRawText');
+  var closeBtn = document.getElementById('modalClose');
+
+  document.querySelectorAll('.score-row').forEach(function(row) {
+    row.style.cursor = 'pointer';
+    row.addEventListener('click', function() {
+      title.textContent = this.dataset.date;
+      subtitle.textContent = 'Score: ' + this.dataset.score;
+      rawText.textContent = this.dataset.rawText;
+      modal.classList.add('active');
+    });
+  });
+
+  closeBtn.addEventListener('click', function() {
+    modal.classList.remove('active');
+  });
+
+  modal.addEventListener('click', function(e) {
+    if (e.target === modal) modal.classList.remove('active');
+  });
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') modal.classList.remove('active');
+  });
+})();
+</script>
+{% endblock %}

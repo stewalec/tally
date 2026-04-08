@@ -1,0 +1,19 @@
+[project]
+name = "tally"
+version = "0.1.0"
+description = "Daily game score tracker for online puzzle games"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "django>=5.1",
+    "plivo>=4.31",
+    "phonenumbers>=8.13",
+    "python-dotenv>=1.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["tally", "users", "games", "sms"]

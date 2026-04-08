@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+{% block title %}Leaderboard – Tally{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">Leaderboard</h1>
+  <span class="page-date">{{ today|date:"F j, Y" }}</span>
+</div>
+
+{% if not games %}
+  <div class="empty-state">
+    <p>No games configured yet. Add games in the admin panel.</p>
+  </div>
+{% else %}
+
+{# ── Game tabs ──────────────────────────────────────────────── #}
+<div class="tabs game-tabs">
+  {% for game in games %}
+    <a href="?game={{ game.slug }}&period={{ period }}"
+       class="tab {% if game.slug == current_game.slug %}active{% endif %}">
+      {{ game.name }}
+    </a>
+  {% endfor %}
+</div>
+
+{# ── Period selector ─────────────────────────────────────────── #}
+<div class="period-selector">
+  {% for label, value in period_choices %}
+    <a href="?game={{ current_game.slug }}&period={{ value }}"
+       class="period-btn {% if period == value %}active{% endif %}">
+      {{ label }}
+    </a>
+  {% endfor %}
+</div>
+
+{# ── Leaderboard table ───────────────────────────────────────── #}
+{% if rows %}
+<div class="card">
+  <table class="leaderboard-table">
+    <thead>
+      <tr>
+        <th class="col-rank">#</th>
+        <th class="col-name">Player</th>
+        <th class="col-score">
+          {% if period == "today" %}Score{% else %}Avg Score{% endif %}
+        </th>
+        <th class="col-streak">Streak</th>
+        <th class="col-games">Games</th>
+        {% if period == "today" %}<th class="col-action"></th>{% endif %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in rows %}
+      <tr class="{% if row.user == request.user %}is-me{% endif %} {% if not row.display_score %}no-score{% endif %}">
+        <td class="col-rank">
+          {% if row.rank %}
+            <span class="rank-badge rank-{{ row.rank }}">{{ row.rank }}</span>
+          {% else %}
+            <span class="rank-dash">—</span>
+          {% endif %}
+        </td>
+        <td class="col-name">
+          <a href="{% url 'user_detail' row.user.username %}?game={{ current_game.slug }}" class="player-link">
+            {{ row.user.display_name }}
+          </a>
+          {% if row.user == request.user %}<span class="you-badge">you</span>{% endif %}
+        </td>
+        <td class="col-score">
+          {% if row.display_score is not None %}
+            <span class="score-value">{{ row.display_score }}</span>
+          {% else %}
+            <span class="score-empty">—</span>
+          {% endif %}
+        </td>
+        <td class="col-streak">
+          {% if row.current_streak > 0 %}
+            <span class="streak">🔥 {{ row.current_streak }}</span>
+          {% else %}
+            <span class="score-empty">—</span>
+          {% endif %}
+        </td>
+        <td class="col-games">{{ row.period_games }}</td>
+        {% if period == "today" %}
+        <td class="col-action">
+          {% if row.score_obj %}
+            <button class="btn btn-ghost btn-xs score-view-btn" data-raw-text="{{ row.score_obj.raw_text }}" data-player="{{ row.user.display_name }}" data-score="{{ row.display_score }}">
+              View
+            </button>
+          {% endif %}
+        </td>
+        {% endif %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="empty-state">
+  <div class="empty-icon">🎮</div>
+  <p class="empty-title">No scores yet today.</p>
+  <p class="empty-sub">Text your score to <strong>{{ plivo_number }}</strong> to get on the board.</p>
+</div>
+{% endif %}
+
+{% endif %}
+{% endblock %}
+
+{% block modal %}
+<div class="modal-overlay" id="scoreModal">
+  <div class="modal-card">
+    <div class="modal-header">
+      <div>
+        <span class="modal-title" id="modalTitle"></span>
+        <span class="modal-subtitle" id="modalSubtitle"></span>
+      </div>
+      <button class="modal-close" id="modalClose" aria-label="Close">&times;</button>
+    </div>
+    <div class="modal-body">
+      <label class="form-label">Raw submission</label>
+      <pre class="raw-text-block" id="modalRawText"></pre>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  var modal = document.getElementById('scoreModal');
+  if (!modal) return;
+  var title = document.getElementById('modalTitle');
+  var subtitle = document.getElementById('modalSubtitle');
+  var rawText = document.getElementById('modalRawText');
+  var closeBtn = document.getElementById('modalClose');
+
+  document.querySelectorAll('.score-view-btn').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      title.textContent = this.dataset.player;
+      subtitle.textContent = 'Score: ' + this.dataset.score;
+      rawText.textContent = this.dataset.rawText;
+      modal.classList.add('active');
+    });
+  });
+
+  document.querySelectorAll('.score-row').forEach(function(row) {
+    row.style.cursor = 'pointer';
+    row.addEventListener('click', function() {
+      title.textContent = this.dataset.date;
+      subtitle.textContent = 'Score: ' + this.dataset.score;
+      rawText.textContent = this.dataset.rawText;
+      modal.classList.add('active');
+    });
+  });
+
+  closeBtn.addEventListener('click', function() {
+    modal.classList.remove('active');
+  });
+
+  modal.addEventListener('click', function(e) {
+    if (e.target === modal) modal.classList.remove('active');
+  });
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') modal.classList.remove('active');
+  });
+})();
+</script>
+{% endblock %}

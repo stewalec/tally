@@ -1,0 +1,13 @@
+{
+  "name": "Codespaces",
+  "image": "mcr.microsoft.com/devcontainers/python:2-3.14-trixie",
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "chat.disableAIFeatures": true
+      }
+    }
+  },
+  "postCreateCommand": "[ -f .devcontainer/post-create.sh ] && bash .devcontainer/post-create.sh || true",
+  "remoteUser": "vscode"
+}
